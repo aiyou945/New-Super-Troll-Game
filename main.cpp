@@ -1,3 +1,4 @@
+//version: v1.0.0
 #include<bits/stdc++.h>
 #include<Windows.h>
 #include<io.h>
@@ -7,69 +8,95 @@
 #include "init.hpp"
 using namespace std;
 int coin = 0;
-int ac[2] = {0,0};
+int ac[3] = {0,0,0};
 int cs[3];
 int c[4] = {0,2,0,0};
-string content = "";
+int shop[2] = {0,0};
+int ly = 0,news = 0;
+void get_coin(HANDLE handle,int num){
+	cout << endl;
+	scolor(handle,yellow);
+	cout << "恭喜获得:[金币]x" << num << endl;
+	coin += num;
+}
 void read(HANDLE handle){
+	CONSOLE_CURSOR_INFO cursorInfo = {1,1};
+	SetConsoleCursorInfo(handle,&cursorInfo);
+	cls();
+	logo(handle);
+	cout << "当前版本:v1.0.0" << endl;
 	scolor(handle,gray);
 	cout << "离线登录" << endl; 
 	scolor(handle,light_green);
 	cout << "请输入读档码(./file/userdata.txt)" << endl;
+	scolor(handle,light_blue);
+	cout << "初始存档码:g000" << endl;
 	colorclear(handle);
 	string input;
 	cin >> input;
 	coin = in_coin(input);
 	char_change(input[2],ac,handle);
-	if(input[1] != '0' && input[1] != 'p' && input[1] != 'f'){
+	char_change(input[3],shop,handle);
+	if(input[1] != '0'){
 		cs[1] = input[1] - 'a' + 1;
-		if(cs[1] >= 5 || (input[1] >= '1' && input[1] <= '9')){
+		if(cs[1] >= 8 || (input[1] >= '1' && input[1] <= '9')){
 			scolor(handle,light_red); cout << "读入存档码错误,代码:0x01" << endl;
 			wait(1);
 			colorclear(handle);
 			throw 1;
 		}
 	}
-	else if(input[1] == 'p') cs[1] = 4;
-	else if(input[1] == 'f') cs[1] = 5;
 	else cs[1] = 0;
 	scolor(handle,light_green);
-	cout << "是否允许该程序访问您的网络?(0/1)" << endl;
+	cout << "是否允许游戏访问您的网络?(0否/1是)" << endl;
 	colorclear(handle);
-	int input2;
-	cin >> input2;
-	if(input2 == 1){
+	cin >> ly;
+	cls();
+	string content = "";
+	scolor(handle,light_green); cout << "资源加载中,请稍候..." << endl;
+	if(ly == 1){
 		system("curl -s https://aiyou945.github.io/ckg/data.txt > data.txt");
 		ifstream file("data.txt");
 		getline(file,content);
 		file.close();
 	}
-	else if(input2 != 1 && input2 != 0){
-		scolor(handle,light_red); cout << "读入数据错误,代码:0x11" << endl;
-		wait(1);
-		colorclear(handle);
-		throw -1; 
-	}
+	if(content == "3") news = 1;
 	cls();
 }
 void output(string str){
 	ofstream("userdata.txt") << str;
 }
-string notice_in(){
-	ifstream file("./strings/notice1.ckg");
-	string content,line;
-	while(getline(file,line)){
-		content += line + "\n";
-	} 
-	file.close();
-	return content;
+string notice_in(int n){
+	if(n == 1){
+		ifstream file("./strings/notice1.ckg");
+		string content,line;
+		while(getline(file,line)){
+			content += line + "\n";
+		} 
+		file.close();
+		return content;
+	}
+	else{
+		ifstream file("./strings/notice2.ckg");
+		string content,line;
+		while(getline(file,line)){
+			content += line + "\n";
+		} 
+		file.close();
+		return content;
+	}
 }
 void print(string str,HANDLE handle){
 	scolor(handle,light_purple);
 	for(int i = 0;i < str.size();i++){
-		if(str[i] != ' ') cout << str[i];
+		if(str[i] != ' ' && str[i] != '*') cout << str[i];
+		else if(str[i] == '*') wait(2);
 		else cout << endl;
 		wait(0.03);
+		if(exit()){
+			colorclear(handle);
+			return ;
+		}
 	}
 	colorclear(handle);
 	cout << endl;
@@ -130,6 +157,9 @@ void case1(HANDLE handle){
 		if(KEY_DOWN(65) && y - 1 >= 1 && mp[x][y - 1] != 1) y--;
 		if(KEY_DOWN(83) && x + 1 <= 8 && mp[x + 1][y] != 1) x++;
 		if(KEY_DOWN(87) && x - 1 >= 1 && mp[x - 1][y] != 1) x--;
+		if(exit()){
+			return ;
+		}
 		if(door == false && y1 == false && y2 == false && x == 8 && y == 1){
 			door = true;
 			if(c[1] == 2 || c[1] == 3){
@@ -180,9 +210,11 @@ void case1(HANDLE handle){
 	print(s1,handle);
 	if(cs[1] == 0){
 		cs[1] = 1;
-		string str = out(coin,1,ac,0);
+		get_coin(handle,10);
+		string str = out(coin,1,ac,shop);
 		output(str);
 	}
+	pause();
 	return ;
 }
 void case2(HANDLE handle){
@@ -215,7 +247,7 @@ void case2(HANDLE handle){
 		cls();
 		scolor(handle,light_purple);
 		if(left == false && right == false) cout << "任务1:不要向左走!" << endl << endl;
-		else if(left == true && right == false) cout << "任务2:不要向右走!" << endl << endl;
+		else if(left == true && right == false) cout << "任务2:不要向右走!(提示:和MC指令有关)" << endl << endl;
 		else if(left == true && right == true && c[1] <= 2) cout << "任务3:不要进门!" << endl << endl;
 		else {scolor(handle,red);cout << "任务3:不要进门!" << endl << endl;}
 		for(int i = 0;i < 12;i++){
@@ -313,6 +345,9 @@ void case2(HANDLE handle){
 				x--;
 			}
 		}
+		if(exit()){
+			return ;
+		}
 		if(left == true && right == false && KEY_DOWN(84)){
 			cls();
 			if(c[1] <= 2){
@@ -384,9 +419,11 @@ void case2(HANDLE handle){
 	}
 	if(cs[1] == 1){
 		cs[1] = 2;
-		string str = out(coin,2,ac,0);
+		get_coin(handle,10);
+		string str = out(coin,2,ac,shop);
 		output(str);
 	}
+	pause();
 	return ;
 }
 void case3(HANDLE handle){
@@ -477,6 +514,9 @@ void case3(HANDLE handle){
 		if(KEY_DOWN(87) && x - 1 >= 1 && mp[x - 1][y] != 1){
 			x--;
 		}
+		if(exit()){
+			return ;
+		}
 		if(mp[x][y] == 3){
 			cls();
 			s3 = "你发现了一颗糖果,你觉得应该挺好吃的, 你把糖果放进嘴里,甜滋滋的,你高兴极了, 唱着《七里香》继续前进";
@@ -520,7 +560,11 @@ void case3(HANDLE handle){
 	else s3 = "你来到突然出现的怪物前,怪物一口把你吞了,你来到了一个密室里! 密室里有一块石头,你用手触碰上面的符文, 一个显示屏凭空出现:请输入密码!";
 	print(s3,handle);
 	int mima;
+	CONSOLE_CURSOR_INFO cursorInfo = {1,1};
+	SetConsoleCursorInfo(handle,&cursorInfo);
 	cin >> mima;
+	cursorInfo = {1,0};
+	SetConsoleCursorInfo(handle,&cursorInfo);
 	if(c[1] == 3){
 		if(mima % 10 != mm || (mima / 10) % 10 != pq || mima / 100 != 1){
 			cls();
@@ -542,13 +586,14 @@ void case3(HANDLE handle){
 	cls();
 	s3 = "你输完密码,石头上突然出现一条裂痕,你掉了下去 再次睁开眼时,你发现自己身处一个温馨的房间 难道......你已经回到家了吗?";
 	print(s3,handle);
-	cout << endl << "按任意键返回首页" << endl;
-	pause();
 	if(cs[1] == 2){
 		cs[1] = 3;
-		string str = out(coin,3,ac,0);
+		get_coin(handle,10);
+		string str = out(coin,3,ac,shop);
 		output(str);
 	}
+	cout << endl << "按任意键返回首页" << endl;
+	pause();
 	return ;
 }
 void case4(HANDLE handle){
@@ -622,6 +667,9 @@ void case4(HANDLE handle){
 		if(KEY_DOWN(68) && y < 13) y++;
 		if(KEY_DOWN(87)) x--;
 		if(KEY_DOWN(83)) x++;
+		if(exit()){
+			return ;
+		}
 		if(KEY_DOWN('1') && KEY < 2 && c[1] == 1) KEY++;
 		if(KEY_DOWN('3') && KEY == 2 && c[1] == 1) KEY++;
 		if(KEY_DOWN('2') && stv == 1 && c[1] == 2){
@@ -653,13 +701,14 @@ void case4(HANDLE handle){
 	else if(c[1] == 2) s4 = "你开始和发表离谱言论的机哥争论,但他坚持不听 你气愤地输入了/kill指令 趁着机哥倒下,尖刺都在为他悲伤,你趁机溜了出去, 进入了一片黑暗中......";
 	else s4 = "你发现了一面可以穿过去的刺墙,你用尽全身力气向它撞去 你进入了一片黑暗中......";
 	print(s4,handle);
-	cout << endl << "按任意键返回首页" << endl;
-	pause();
 	if(cs[1] == 3){
 		cs[1] = 4;
-		string str = out(coin,4,ac,0);
+		get_coin(handle,10);
+		string str = out(coin,4,ac,shop);
 		output(str);
 	}
+	cout << endl << "按任意键返回首页" << endl;
+	pause();
 }
 void case5(HANDLE handle){
 	cls();
@@ -675,9 +724,9 @@ void case5(HANDLE handle){
 					  1,0,1,1,1,1,1,0,1,1,1,0,0,1,1,0,0,1,0,0,0,0,0,0,0,1,0,1,1,1,
 					  1,0,1,0,0,0,0,0,0,1,0,0,1,0,1,0,0,1,1,0,1,1,1,1,0,1,0,0,0,1,
 					  1,0,0,0,0,1,1,0,0,0,0,1,0,0,1,0,0,1,0,0,1,1,1,1,0,1,0,1,0,1,
-					  1,0,1,0,0,1,1,0,0,1,0,1,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,
-					  1,1,0,0,0,1,1,0,0,1,0,1,0,1,1,0,0,0,0,0,1,0,1,1,0,0,0,0,1,1,
-					  1,1,1,1,0,1,1,1,1,0,0,1,1,1,1,1,1,0,1,0,1,0,1,1,0,1,0,0,0,1,
+					  1,0,1,0,1,1,1,0,1,1,0,1,0,0,1,0,0,0,0,0,0,0,1,1,0,0,0,0,1,1,
+					  1,0,0,0,0,1,1,0,0,1,0,1,0,1,1,0,0,0,0,0,1,0,1,1,0,0,0,0,1,1,
+					  1,6,1,1,0,1,1,1,1,0,0,1,1,1,1,1,1,0,1,0,1,0,1,1,0,1,0,0,0,1,
 					  1,3,0,0,0,1,1,0,0,0,5,1,0,0,1,0,0,0,0,0,1,1,1,1,0,0,0,1,1,1,
 					  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 	int tx1 = 0,tx2 = 14;
@@ -685,15 +734,25 @@ void case5(HANDLE handle){
 	int x = 1,y = 1;
 	int sx = 1,sy = 1;
 	int torch = 0,od = 0,ms = 0;
+	if(c[1] == 3){
+		mp[8][1] = 0;
+		mp[5][10] = 4;
+	}
+	int gun = 0;
 	while(true){
 		cls();
 		if(ms == 1){sx = 5,sy = 5;scolor(handle,light_purple);cout << "你发现了一只怪物,怪物也发现了你..." << endl;}
-		else if(torch == 1 && od == 0){sx = 3,sy = 3;scolor(handle,light_purple);cout << "你拾取了道具:手电筒x1\n你可以看到更大范围内的物品了..." << endl;}
-		else if(torch == 1 && od == 1){scolor(handle,yellow);cout << "你拾取了道具:钥匙x1\n快去寻找通关的大门吧!" << endl;}
+		else if(torch == 1 && od == 0){sx = 3,sy = 3;scolor(handle,light_purple);cout << "你拾取了道具:手电筒x1,你可以看到更大范围内的物品了..." << endl;}
+		else if(od == 1){scolor(handle,yellow);cout << "你拾取了道具:钥匙x1\n快去寻找通关的大门吧!" << endl;}
+		if(shop[0] == 1){scolor(handle,sky);cout << "看来你也不是第一次玩了,既然你已经买下了枪械,就快去和怪物决一死战吧!" << endl;}
 		int i1 = x - sx; if(i1 < 0) i1 = 0;
 		int i2 = x + sx; if(i2 > 9) i2 = 9;
 		int j1 = y - sy; if(j1 < 0) j1 = 0;
 		int j2 = y + sy; if(j2 > 29) j2 = 29;
+		if(gun == 2){
+			gun = 1;
+			mp[mx][my + 1] = 7,mp[mx + 1][my] = 7,mp[mx + 1][my + 1] = 7,mp[mx - 1][my] = 7,mp[mx][my - 1] = 7,mp[mx - 1][my + 1] = 7,mp[mx + 1][my - 1] = 7,mp[mx - 1][my - 1] = 7;
+		}
 		for(int i = 0;i < 10;i++){
 			for(int j = 0;j < 30;j++){
 				if(i == x && j == y){
@@ -707,6 +766,8 @@ void case5(HANDLE handle){
 					else if(mp[i][j] == 3){scolor(handle,light_red);cout << "电";}
 					else if(mp[i][j] == 4){scolor(handle,yellow);cout << "钥";}
 					else if(mp[i][j] == 5){colorclear(handle);cout << "怪";}
+					else if(mp[i][j] == 6){scolor(handle,light_green);cout << "墙";}
+					else if(mp[i][j] == 7){scolor(handle,sky);cout << "光";}
 				} else{
 					scolor(handle,gray); cout << "??";
 				}
@@ -718,6 +779,16 @@ void case5(HANDLE handle){
 		if(KEY_DOWN(65) && y - 1 >= 1 && mp[x][y - 1] != 1) y--;
 		if(KEY_DOWN(83) && x + 1 <= 9 && mp[x + 1][y] != 1) x++;
 		if(KEY_DOWN(87) && x - 1 >= 1 && mp[x - 1][y] != 1) x--;
+		if(gun == 1){
+			Sleep(1000);
+			break;
+		}
+		if((mx == x && my > y && my - y <= 2 && GUN_D()) || (mx == x && my < y && y - my <= 2 && GUN_A()) || (my == y && mx > x && mx - x <= 2 && GUN_S()) || (my == y && mx < x && x - mx <= 2 && GUN_W())){
+			gun = 2;
+		}
+		if(exit()){
+			return ;
+		}
 		if(mp[x][y] == 3){
 			mp[x][y] = 0;
 			torch = 1;
@@ -726,9 +797,11 @@ void case5(HANDLE handle){
 		if(mp[x][y] == 4){
 			mp[x][y] = 0;
 			od = 1;
-			mp[2][28] = 0;
+			if(c[1] != 3) mp[2][28] = 0;
+			else mp[1][12] = 0;
 		}
-		if(ms == 1){
+		if(c[1] == 2 && x == 8 && y == 3) mp[8][2] = 1;
+		if(ms == 1 && gun == 0){
 			mp[mx][my] = 0;
 			if(x < mx){
 				mp[mx - 1][my] = 0;
@@ -756,6 +829,23 @@ void case5(HANDLE handle){
 		if(mp[x][y] == 2) break;
 	}
 	cls();
+	if(gun == 1){
+		scolor(handle,sky);
+		for(int i = 0;i < 10;i++){
+			for(int j = 0;j < 30;j++){
+				cout << "炸";
+			}
+			cout << endl;
+		}
+		Sleep(1000);
+		cls();
+		s5 = "你用能量弹枪发射的能量光束炸毁了整个矩阵,怪物也随之被打飞 恭喜该名二周目玩家获得成就:['钞'能力的力量!] 已对玩家发送金币奖励";
+		print(s5,handle);
+		get_coin(handle,10);
+		ac[2] = 1;
+		pause();
+		return ;
+	}
 	if(ms == 2){
 		s5 = "你被怪物抓住了 过关失败";
 		print(s5,handle);
@@ -765,15 +855,341 @@ void case5(HANDLE handle){
 	}
 	s5 = "在你的不懈努力下,终于找到了这个矩阵的出口 你赶紧推开大门,耀眼的阳光瞬间穿透了整个矩阵 你赶紧大步迈了出去...";
 	print(s5,handle);
-	scolor(handle,light_yellow);
-	cout << "恭喜通关超坑小游戏v0.5所有关卡\n更多关卡正在赶来,敬请期待!" << endl << endl; colorclear(handle);
-	cout << "按下任意键返回首页";
-	pause();
 	if(cs[1] == 4){
 		cs[1] = 5;
-		string str = out(coin,5,ac,0);
+		get_coin(handle,10);
+		string str = out(coin,5,ac,shop);
 		output(str);
 	}
+	pause();
+}
+void case6(HANDLE handle){
+	cls();
+	string s6 = "你从黑暗里冲了出来,来到了另一个矩阵里 你发现矩阵对面有一个电梯,你想赶紧跑过去 不知为什么,你有一种不好的预感...";
+	if(cs[1] == 5 && c[2] == 0){
+		print(s6,handle);
+		cout << endl << "按任意键继续游戏" << endl;
+		pause();
+	}
+	int x = 1,y = 1;
+	int mp[15][15] = {1,1,1,1,1,1,2,1,1,1,1,1,1,1,1,
+	                  1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,
+					  1,4,1,1,1,0,1,1,1,0,1,1,1,0,1,
+					  1,0,1,0,1,1,1,0,1,0,0,0,0,0,1,
+					  1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,
+					  1,1,0,1,0,0,1,1,0,1,0,0,1,1,1,
+					  1,0,0,0,0,1,0,0,0,0,1,0,0,0,1,
+					  1,0,1,0,1,0,0,0,1,1,0,1,1,0,1,
+					  1,0,0,9,0,9,0,9,9,0,0,0,0,0,1,
+					  1,1,1,1,1,1,1,1,1,1,1,3,2,3,1,
+					  0,0,0,0,0,0,0,0,0,0,0,3,0,3,0,
+					  0,0,0,0,0,0,0,0,0,0,0,3,0,3,0,
+					  0,0,0,0,0,0,0,0,0,0,0,3,3,3,0,
+					  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+					  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+	int mx = 6,my = 9;
+	while(true){
+		cls();
+		for(int i = 0;i < 15;i++){
+			for(int j = 0;j < 15;j++){
+				if(i == mx && j == my && c[1] > 1){scolor(handle,light_red);cout << "怪";}
+				else if(mp[i][j] == 6){scolor(handle,gray);cout << "刺";}
+				else if(i == x && j == y){colorclear(handle);cout << "我";}
+				else if(mp[i][j] == 0) cout << "  ";
+				else if(mp[i][j] == 1){scolor(handle,light_green);cout << "墙";}
+				else if(mp[i][j] == 2){scolor(handle,light_blue);cout << "门";}
+				else if(mp[i][j] == 3){scolor(handle,light_blue);cout << "墙";}
+				else if(mp[i][j] == 4){scolor(handle,green);cout << "墙";}
+				else if(mp[i][j] == 9){scolor(handle,light_green);cout << "墙";}
+			}
+			cout << endl;
+		}
+		if(mp[x][y] == 6){
+			scolor(handle,light_purple);
+			cout << endl << "你被突然出现的尖刺扎成了刺猬" << endl;
+			x = 1,y = 1;
+			pause();
+			continue;
+		}
+		pause();
+		if(exit()) return ;
+		if(KEY_DOWN(68) && y + 1 <= 14 && mp[x][y + 1] != 1) y++;
+		if(KEY_DOWN(65) && y - 1 >= 1 && mp[x][y - 1] != 1) y--;
+		if(KEY_DOWN(83) && x + 1 <= 9 && mp[x + 1][y] != 1 && mp[x + 1][y] != 3) x++;
+		if(KEY_DOWN(87) && ((x - 1 >= 1 && mp[x - 1][y] != 1) || (x == 1 && y == 5 && c[1] > 1))) x--;
+		if(x == 6 && y == 13 && c[1] == 1){mp[7][13] = 1,mp[8][7] = 0,mp[8][8] = 0;}
+		if(x == 7 && y >= 5 && y <= 7){x--,mp[6][5] = 0,mp[7][5] = 1,mp[7][6] = 1,mp[7][7] = 1;}
+		if(c[1] == 1){
+			mx = 0,my = 0;
+		}
+		else{
+			if(x >= mx) mx += 2;
+			else if(x <= mx) mx -= 2;
+			if(y >= my) my += 2;
+			else if(y <= my) my -= 2;
+		}
+		if(c[1] == 2)mp[mx][my] = 6;
+		if(c[1] == 3) mp[mx + 1][my] = 6,mp[mx][my + 1] = 6,mp[mx - 1][my] = 6,mp[mx][my - 1] = 6;
+		if(x == 1 && y == 6) mp[x][y] = 6;
+		if(mp[x][y] == 2){
+			if(x != 0) break;
+			else x = 6,y = 11;
+		}
+	}
+	cls();
+	x += 2;
+	mp[9][11] = 1,mp[9][12] = 1,mp[9][13] = 1,mp[10][11] = 3,mp[10][12] = 2,mp[10][13] = 3,mp[12][12] = 0,mp[13][11] = 3,mp[13][12] = 3,mp[13][13] = 3;
+	for(int i = 0;i < 15;i++){
+		for(int j = 0;j < 15;j++){
+			if(i == x && j == y){colorclear(handle);cout << "我";}
+			else if(mp[i][j] == 0) cout << "  ";
+			else if(mp[i][j] == 1){scolor(handle,light_green);cout << "墙";}
+			else if(mp[i][j] == 2){scolor(handle,light_blue);cout << "门";}
+			else if(mp[i][j] == 3){scolor(handle,light_blue);cout << "墙";}
+			else if(mp[i][j] == 4){scolor(handle,green);cout << "墙";}
+			else cout << "  ";
+		}
+		cout << endl;
+	}
+	Sleep(1000);
+	cls();
+	x++;
+	mp[10][11] = 0,mp[10][12] = 0,mp[10][13] = 0,mp[11][11] = 3,mp[11][12] = 2,mp[11][13] = 3,mp[12][12] = 0,mp[13][12] = 0;
+	for(int i = 0;i < 15;i++){
+		for(int j = 0;j < 15;j++){
+			if(i == x && j == y){colorclear(handle);cout << "我";}
+			else if(mp[i][j] == 0) cout << "  ";
+			else if(mp[i][j] == 1){scolor(handle,light_green);cout << "墙";}
+			else if(mp[i][j] == 2){scolor(handle,light_blue);cout << "门";}
+			else if(mp[i][j] == 3){scolor(handle,light_blue);cout << "墙";}
+			else if(mp[i][j] == 4){scolor(handle,green);cout << "墙";}
+			else cout << "  ";
+		}
+		cout << endl;
+	}
+	Sleep(1000);
+	cls();
+	x++;
+	mp[11][11] = 0,mp[11][12] = 0,mp[11][13] = 0,mp[12][12] = 2;
+	for(int i = 0;i < 15;i++){
+		for(int j = 0;j < 15;j++){
+			if(i == x && j == y){colorclear(handle);cout << "我";}
+			else if(mp[i][j] == 0) cout << "  ";
+			else if(mp[i][j] == 1){scolor(handle,light_green);cout << "墙";}
+			else if(mp[i][j] == 2){scolor(handle,light_blue);cout << "门";}
+			else if(mp[i][j] == 3){scolor(handle,light_blue);cout << "墙";}
+			else if(mp[i][j] == 4){scolor(handle,green);cout << "墙";}
+			else cout << "  ";
+		}
+		cout << endl;
+	}
+	Sleep(1000);
+	if(cs[1] == 5){
+		cs[1] = 6;
+		get_coin(handle,10);
+		string str = out(coin,6,ac,shop);
+		output(str);
+	}
+	pause();
+}
+void case7(HANDLE handle){
+	cls();
+	if(shop[0] == 0){
+		logo(handle);
+		scolor(handle,gray);
+		cout << "温馨提示:" << endl;
+		scolor(handle,light_red);
+		cout << "通过此关需要商品[能量弹枪],请先前往商店购买" << endl;
+		scolor(handle,light_purple);
+		cout << "作者的提醒:这关都叫做boss关了,你以为你赤手空拳可以打败boss吗?上一边去!" << endl;
+		colorclear(handle);
+		wait(2);
+		return ;
+	}
+	string s7 = "你乘坐电梯来到了下一个矩阵 这个矩阵比其他的都大了很多,明显不对劲! 你拿起随身携带的装备 看来,今天肯定要打一场硬仗了...... 温馨提示:此关为boss关,会融合前面所有关卡的特性,请做好准备";
+	if(cs[1] == 6 && c[2] == 0){
+		print(s7,handle);
+		cout << endl << "按任意键开始挑战!" << endl;
+		pause();
+	}
+	int x = 1,y = 1;
+	int mp[25][30] = {3,9,3,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+					  3,0,3,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0,1,1,
+					  3,0,3,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1,
+					  3,0,3,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0,0,1,
+					  1,0,0,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,0,1,
+					  1,4,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,0,0,0,1,
+					  1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,1,1,1,0,1,
+					  1,0,0,0,0,5,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,1,
+					  1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1,1,1,
+					  1,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,1,0,1,0,0,1,
+					  1,0,1,1,1,0,1,1,1,1,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,0,1,0,1,1,
+					  1,0,1,0,0,0,0,0,0,5,1,0,1,0,0,0,0,0,1,0,1,0,1,0,0,0,1,0,1,1,
+					  1,0,1,0,1,0,0,0,1,0,1,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,1,0,1,1,
+					  1,0,1,5,1,0,1,0,1,0,1,1,1,1,1,0,1,0,6,0,1,1,1,0,1,0,1,0,1,1,
+					  1,0,1,0,1,0,1,0,1,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0,1,0,1,1,
+					  1,0,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,0,0,0,0,0,0,1,
+					  1,0,1,0,1,0,1,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1,
+					  1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,0,0,0,0,0,1,
+					  1,0,1,0,1,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,
+					  1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,0,0,0,0,0,1,
+					  1,0,1,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,0,1,
+				   	  1,0,1,1,1,1,1,0,1,0,1,0,1,1,1,1,1,0,1,0,1,0,1,0,0,0,0,0,0,1,
+					  1,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,1,0,1,0,1,0,1,0,0,0,0,0,0,1,
+					  1,0,0,0,0,0,1,0,0,0,0,0,1,0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0,1,
+					  1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+	long long sx = 2,sy = 2,mx = 20,my = 24,smx = 7,smy = 13,boss = 0,torch = 0,zd = 0,mt_sm = 0,ty = -1,times = 0;
+	while(true){
+		cls();
+		if(mp[x][y] == 6){
+			zd = -2147483646;
+		}
+		scolor(handle,light_purple);cout << "剩余弹药:" << zd << endl;
+		scolor(handle,light_green);cout << "规则1:不要捡黄色的子弹!" << endl;
+		if(zd < 0){scolor(handle,sky);cout << "原来,黄色子弹里装的是退弹器,把你的子弹退成了负数(提示:按Ctrl+Z可以重开)" << endl;}
+		else{scolor(handle,light_green);cout << "规则2:触发boss前,不要试图使用任何武器!" << endl;}
+		if(boss == 1){scolor(handle,light_green);cout << "规则3:不要攻击boss!" << endl;}
+		else if(boss == 2){scolor(handle,light_red);cout << "规则3:不要攻击boss!" << endl;}
+		int i1 = x - sx; if(i1 < 0) i1 = 0;
+		int i2 = x + sx; if(i2 > 24) i2 = 24;
+		int j1 = y - sy; if(j1 < 0) j1 = 0;
+		int j2 = y + sy; if(j2 > 29) j2 = 29;
+		for(int i = 0;i < 25;i++){
+			for(int j = 0;j < 30;j++){
+				if(i == x && j == y){colorclear(handle);cout << "我";}
+				else if(i >= i1 && i <= i2 && j >= j1 && j <= j2){
+					if(i == mx && j == my){scolor(handle,red);cout << "怪";}
+					else if(i == smx && j == smy){colorclear(handle);cout << "怪";}
+					else if(j <= ty){mp[i][j] = -1;scolor(handle,gray);cout << "刺";}
+					else if(mp[i][j] == 0) cout << "  ";
+					else if(mp[i][j] == 1){scolor(handle,light_green); cout << "墙";}
+					else if(mp[i][j] == 2){scolor(handle,light_blue); cout << "门";}
+					else if(mp[i][j] == 3){scolor(handle,light_blue); cout << "墙";}
+					else if(mp[i][j] == 4){scolor(handle,light_red);cout << "电";}
+					else if(mp[i][j] == 5){scolor(handle,blue);cout << "弹";}
+					else if(mp[i][j] == 6){scolor(handle,yellow);cout << "弹";}
+					else if(mp[i][j] == 9){scolor(handle,light_blue); cout << "门";}
+				}
+				else{
+					scolor(handle,gray);
+					printf("??");
+				}
+			}
+			cout << endl;
+		}
+		if(!boss && (GUN_A() || GUN_W() || GUN_D() || GUN_S())){
+			Sleep(2000);
+			cls();
+			s7 = "你试图违反规则2使用自己的[能量手枪],结果它炸膛了 你被炸回了重生点";
+			print(s7,handle);
+			cout << endl << "按任意键继续游戏" << endl;
+			pause();
+			continue; 
+		}
+		if(zd == 9223372036854775807){
+			Sleep(2000);
+			cls();
+			break;
+		}
+		if(boss == 2){
+			Sleep(2000);
+			cls();
+			s7 = "规则突然变了一个颜色,你被boss一巴掌轰飞了出去 boss趁机瞬移到了地图外面 过关失败";
+			print(s7,handle);
+			cout << endl << "按任意键返回首页" << endl;
+			pause();
+			return ;
+		}
+		pause();
+		if(exit()){
+			return ;
+		}
+		if(boss == 3){
+			Sleep(2000);
+			cls();
+			s7 = "boss见你的火力很强,躲到尖刺里去了";
+			print(s7,handle);
+			cout << endl << "提示:按任意键可以重开游戏" << endl;
+			pause();
+			return ;
+		}
+		if(KEY_DOWN(68) && y + 1 < 30 && mp[x][y + 1] != 1 && mp[x][y + 1] != 3 && mp[x][y + 1] != 9) y++;
+		if(KEY_DOWN(65) && y - 1 >= 1 && mp[x][y - 1] != 1 && mp[x][y - 1] != 3 && mp[x][y - 1] != 9) y--;
+		if(KEY_DOWN(83) && x + 1 < 25 && mp[x + 1][y] != 1 && mp[x + 1][y] != 3 && mp[x + 1][y] != 9) x++;
+		if(KEY_DOWN(87) && x - 1 >= 1 && mp[x - 1][y] != 1 && mp[x - 1][y] != 3 && mp[x - 1][y] != 9) x--;
+		if(mp[x][y] == 4){
+			mp[x][y] = 0;
+			torch = 1;
+			sx = 3,sy = 3;
+			continue;
+		}
+		if(mp[x][y] == 5){
+			mp[x][y] = 0;
+			zd++;
+		}
+		if(boss) ty++;
+		if(x < smx) smx -= 2;
+		else if(x > smx) smx += 2;
+		else if(y < smy) smy -= 2;
+		else smy += 2;
+		if(abs(x - mx) <= 3 || abs(y - my) <= 3){
+			boss = 1;
+			sx = 100,sy = 100;
+			if(c[1] <= 2){
+				smx = -2147483647;
+				smy = 2147483647;
+			}
+		}
+		if(boss && (mx == x && my > y && my - y <= 2 && GUN_D()) || (mx == x && my < y && y - my <= 2 && GUN_A()) || (my == y && mx > x && mx - x <= 2 && GUN_S()) || (my == y && mx < x && x - mx <= 2 && GUN_W())){
+			times++;
+			zd--;
+		}
+		if(times == 1 && boss != -1){
+			if(zd == -2147483647){
+				zd = 9223372036854775807;
+			}
+			else{
+				mx = 1,my = 1;
+				mp[22][22] = 1,mp[22][23] = 1,mp[22][24] = 1,mp[23][24] = 1;
+				boss = 2;
+				x = 23,y = 23;
+			}
+		}
+		if(times == 2){
+			mx = 1,my = 1;
+			boss = 3;
+		}
+		if(mp[x][y] == -1){
+			cls();
+			s7 = "你被boss召唤的尖刺扎到了 过关失败";
+			print(s7,handle);
+			cout << endl << "按任意键继续游戏" << endl;
+			pause();
+			return ;
+		}
+		if(mp[x][y] == 2){
+			break;
+		}
+		if(x == smx && y == smy){
+			if(ty == -1) x = 3,y = 1,smx = 24,smy = 13;
+			scolor(handle,red);
+			cout << endl << "你被怪物抓住了" << endl;
+			Sleep(2000);
+			continue;
+		}
+	}
+	s7 = "正当你为子弹变成负数而懊恼的时候,你发现因为数据越界,你的子弹数变成了无穷大 你用尽全力干掉了这个boss,身后的尖刺也追了上来 你赶紧跑进了门里,你掉入了一个大管道内 这又是哪里?应该怎样才能逃出去呢? 敬请期待:[第二章节:管道追踪]";
+	print(s7,handle);
+	scolor(handle,light_yellow);
+	cout << "恭喜通关超坑小游戏v1.0.0所有关卡\n更多关卡正在赶来,敬请期待!" << endl << endl; colorclear(handle);
+	cout << "按下任意键返回首页" << endl;
+	if(cs[1] == 6){
+		cs[1] = 7;
+		get_coin(handle,20);
+		string str = out(coin,7,ac,shop);
+		output(str);
+	}
+	pause();
 }
 void ch_case1(HANDLE handle){
 	while(true){
@@ -782,45 +1198,62 @@ void ch_case1(HANDLE handle){
 		cout << "开始冒险吧!" << endl;
 		colorclear(handle);
 		if(cs[1] >= 1){
-			scolor(handle,light_green); cout << "第一关:初探矩阵(已通关)" << endl;
+			scolor(handle,light_green); cout << "第一关:初探矩阵" << endl;
 		} else{
 			scolor(handle,light_red); cout << "第一关:初探矩阵(冒险中)" << endl;
 		}
 		if(cs[1] >= 2){
-			scolor(handle,light_green); cout << "第二关:千万别手欠!(已通关)" << endl;
+			scolor(handle,light_green); cout << "第二关:千万别手欠!" << endl;
 		} else if(cs[1] >= 1){
 			scolor(handle,light_red); cout << "第二关:千万别手欠!(冒险中)" << endl;
 		} else{
 			if(c[3] == 0){scolor(handle,gray); cout << "第二关:暂未解锁" << endl;}
-			else{scolor(handle,gray); cout << "第二关:千万别手欠!(未解锁)" << endl;}
+			else{scolor(handle,gray); cout << "第二关:千万别手欠!" << endl;}
 		}
 		if(cs[1] >= 3){
-			scolor(handle,light_green); cout << "第三关:我的密码!(已通关)" << endl;
+			scolor(handle,light_green); cout << "第三关:我的密码!" << endl;
 		} else if(cs[1] >= 2){
 			scolor(handle,light_red); cout << "第三关:我的密码!(冒险中)" << endl;
 		} else{
 			if(c[3] == 0){scolor(handle,gray); cout << "第三关:暂未解锁" << endl;}
-			else{scolor(handle,gray); cout << "第三关:我的密码!(未解锁)" << endl;}
+			else{scolor(handle,gray); cout << "第三关:我的密码!" << endl;}
 		}
 		if(cs[1] >= 4){
-			scolor(handle,light_green); cout << "第四关:两面夹击(已通关)" << endl;
+			scolor(handle,light_green); cout << "第四关:两面夹击" << endl;
 		} else if(cs[1] >= 3){
 			scolor(handle,light_red); cout << "第四关:两面夹击(冒险中)" << endl;
-		} else{
+		} else{ 
 			if(c[3] == 0){scolor(handle,gray); cout << "第四关:暂未解锁" << endl;}
-			else{scolor(handle,gray); cout << "第四关:两面夹击(未解锁)" << endl;}
+			else{scolor(handle,gray); cout << "第四关:两面夹击" << endl;}
 		}
 		if(cs[1] >= 5){
-			scolor(handle,light_green); cout << "第五关:天黑请闭眼(已通关)" << endl;
+			scolor(handle,light_green); cout << "第五关:天黑请闭眼" << endl;
 		} else if(cs[1] >= 4){
 			scolor(handle,light_red); cout << "第五关:天黑请闭眼(冒险中)" << endl;
 		} else{
 			if(c[3] == 0){scolor(handle,gray); cout << "第五关:暂未解锁" << endl;}
-			else{scolor(handle,gray); cout << "第五关:天黑请闭眼(未解锁)" << endl;}
+			else{scolor(handle,gray); cout << "第五关:天黑请闭眼" << endl;}
+		}
+		if(cs[1] >= 6){
+			scolor(handle,light_green);cout << "第六关:防不胜防!" << endl;
+		} else if(cs[1] >= 5){
+			scolor(handle,light_red); cout << "第六关:防不胜防!(冒险中)" << endl;
+		} else{
+			if(c[3] == 0){scolor(handle,gray); cout << "第六关:暂未解锁" << endl;}
+			else{scolor(handle,gray); cout << "第六关:防不胜防!" << endl;}
+		}
+		if(cs[1] >= 7){
+			scolor(handle,light_green);cout << "第七关:千万别手欠2(boss!)" << endl;
+		} else if(cs[1] >= 6){
+			scolor(handle,light_red); cout << "第七关:千万别手欠2(boss挑战中!)" << endl;
+		} else{
+			if(c[3] == 0){scolor(handle,gray); cout << "第七关:暂未解锁" << endl;}
+			else{scolor(handle,gray); cout << "第七关:千万别手欠2(boss!)" << endl;}
 		}
 		scolor(handle,gray);
-		if(c[3] == 0) cout << "第六关:暂未制作,敬请期待!" << endl << endl;
-		else cout << "第六关:大逃亡(敬请期待)" << endl << endl;
+		if(c[3] == 0) cout << "挑战关卡I:暂未制作,敬请期待!" << endl << endl;
+		else cout << "挑战关卡I:拼手速大战!(敬请期待)" << endl << endl;
+		scolor(handle,light_purple); cout << "温馨提示:关卡内按Ctrl+Z可退出关卡,播放剧情时按Ctrl+Z优先跳过剧情!" << endl;
 		scolor(handle,light_blue); cout << "如果想游玩关卡,请按下关卡编号+3对应的数字按键\n小贴士:单击按键B即可返回首页!" << endl << endl;
 		colorclear(handle);
 		pause();
@@ -909,20 +1342,57 @@ void ch_case1(HANDLE handle){
 				scolor(handle,light_red); cout << "困难模式" << endl;
 				scolor(handle,light_purple); cout << "综合难度:1.2 坑人指数:1.0" << endl;
 			}
+			scolor(handle,blue | green); cout << "游戏将在3秒后开始" << endl;
 			wait(3);
 			case5(handle);
 			break;
-		}else if(KEY_DOWN(66)){
+		} else if(KEY_DOWN('9') && cs[1] >= 5){
+			cls();
+			logo(handle); cout << "第六关:防不胜防!" << endl;
+			scolor(handle,gray); cout << "当前难度:";
+			if(c[1] == 1){
+				scolor(handle,light_green); cout << "简单模式" << endl;
+				scolor(handle,light_purple); cout << "综合难度:1.1 坑人指数:1.1" << endl;
+			} else if(c[1] == 2){
+				scolor(handle,light_yellow); cout << "普通模式" << endl;
+				scolor(handle,light_purple); cout << "综合难度:1.2 坑人指数:1.2" << endl;
+			} else if(c[1] == 3){
+				scolor(handle,light_red); cout << "困难模式" << endl;
+				scolor(handle,light_purple); cout << "综合难度:1.2 坑人指数:1.2" << endl;
+			}
+			scolor(handle,blue | green); cout << "游戏将在3秒后开始" << endl;
+			wait(3);
+			case6(handle);
+			break;
+		} else if(KEY_DOWN('0') && cs[1] >= 6){
+			cls();
+			logo(handle); cout << "第七关:千万别手欠2(boss!)" << endl;
+			scolor(handle,gray); cout << "当前难度:";
+			if(c[1] == 1){
+				scolor(handle,light_green); cout << "简单模式" << endl;
+			} else if(c[1] == 2){
+				scolor(handle,light_yellow); cout << "普通模式" << endl;
+			} else if(c[1] == 3){
+				scolor(handle,light_red); cout << "困难模式" << endl;
+			}
+			scolor(handle,light_purple); cout << "综合难度:????? 坑人指数:?????" << endl;
+			scolor(handle,blue | green); cout << "游戏将在3秒后开始\n提示:如果你的Windows版本在win10以下,全屏游戏体验更佳!" << endl;
+			wait(3);
+			case7(handle);
+			break;
+		} else if(KEY_DOWN(66)){
 			return ;
 		}
 	}
 }
 void atimet(HANDLE handle){
-	scolor(handle,light_blue); cout << "成就列表(2)" << endl;
+	scolor(handle,light_blue); cout << "成就列表(3)" << endl;
 	if(ac[0] == 1){scolor(handle,light_green);cout << "成就1:[数学天才!]" << endl;colorclear(handle);cout << "获得难度:简单\n获得条件:在第四关内使用电视收听机哥的发言\n描述:谁教你这么计算的???" << endl;}
 	else{scolor(handle,gray);cout << "成就1:[数学天才!]" << endl;colorclear(handle);cout << "获得难度:简单\n获得条件:-\n描述:-\n该成就暂未解锁,快去冒险模式探险吧!" << endl;}
 	if(ac[1] == 1){scolor(handle,light_green);cout << "成就2:[极限拉扯I]" << endl;colorclear(handle);cout << "获得难度:中等\n获得条件:在第五关触发机制怪并在追逐中成功抵达终点\n描述:都说怪物很厉害,原来不过如此!" << endl;}
 	else{scolor(handle,gray);cout << "成就2:[极限拉扯I]" << endl;colorclear(handle);cout << "获得难度:中等\n获得条件:-\n描述:-\n该成就暂未解锁,快去冒险模式探险吧!" << endl;}
+	if(ac[2] == 1){scolor(handle,light_green);cout << "成就3:['钞'能力的力量!]" << endl;colorclear(handle);cout << "获得难度:中等\n获得条件:通关1-6在商店购买到[能量弹枪]后,回头打败1-5的怪物\n描述:怪物:难道这就是钞能力的火力吗..." << endl;}
+	else{scolor(handle,gray);cout << "成就3:['钞'能力的力量!]" << endl;colorclear(handle);cout << "获得难度:中等\n获得条件:-\n描述:-\n该成就暂未解锁,快去自行探索吧!" << endl;}
 	cout << endl << "按任意键返回首页" << endl;
 	pause();
 }
@@ -946,6 +1416,8 @@ void ctrl(HANDLE handle,HWND hWnd){
 			cout << endl << "4.噩梦模式(未开发)" << endl;
 			scolor(handle,gray);
 			cout << "按下对应数字调整难度\n" << endl;
+			scolor(handle,light_purple);
+			cout << "温馨提示:如果想重新输入存档码,请按下字符T\n" << endl;
 			scolor(handle,light_blue);
 			cout << "D->下一页\n单击B返回首页" << endl;
 			colorclear(handle);
@@ -959,6 +1431,9 @@ void ctrl(HANDLE handle,HWND hWnd){
 			} else if(KEY_DOWN(68)){
 				page = 2;
 			} else if(KEY_DOWN(66)){
+				return ;
+			} else if(KEY_DOWN(84)){
+				read(handle);
 				return ;
 			} else{
 				qd(hWnd);
@@ -997,55 +1472,143 @@ void ctrl(HANDLE handle,HWND hWnd){
 	}
 }
 void notice(HANDLE handle){
-	string nt = notice_in();
-	scolor(handle,light_blue);
-	for(int i = 0;i <= 16;i++) cout << nt[i];
-	cout << endl;
-	colorclear(handle);
-	for(int i = 17;i < nt.size();i++){
-		if(nt[i] == ' ') cout << endl;
-		else if(nt[i] == 'L') logo(handle);
-		else if(nt[i] == 'D') cout << "                                                      ";
-		else if(nt[i] == 'E') cout << "                                                 ";
-		else cout << nt[i];
+	string nt = notice_in(1);
+	string nt2 = notice_in(2);
+	int pg = 1;
+	while(true){
+		cls();
+		if(pg == 1){
+			scolor(handle,light_blue);
+			for(int i = 0;i <= 16;i++) cout << nt[i];
+			cout << endl;
+			colorclear(handle);
+			for(int i = 17;i < nt.size();i++){
+				if(nt[i] == ' ') cout << endl;
+				else if(nt[i] == 'L') logo(handle);
+				else if(nt[i] == 'D') cout << "                                                      ";
+				else if(nt[i] == 'E') cout << "                                                 ";
+				else cout << nt[i];
+			}
+		}
+		else{
+			scolor(handle,light_blue);
+			for(int i = 0;i <= 16;i++) cout << nt2[i];
+			cout << endl;
+			colorclear(handle);
+			for(int i = 17;i < nt2.size();i++){
+				if(nt2[i] == ' ') cout << endl;
+				else if(nt2[i] == 'L') logo(handle);
+				else if(nt2[i] == 'D') cout << "                                                      ";
+				else if(nt2[i] == 'E') cout << "                                                 ";
+				else cout << nt2[i];
+			}
+		}
+		cout << endl << "<- A 上一页 | 下一页 D ->\n按任意键返回首页" << endl;
+		pause();
+		if(KEY_DOWN(65)){
+			pg--;
+			if(pg < 1) pg = 2;
+		}
+		else if(KEY_DOWN(68)){
+			pg++;
+			if(pg > 2) pg = 1;
+		}
+		else{
+			return ;
+		}
 	}
-	cout << endl << "按任意键返回首页" << endl;
-	pause();
+}
+void shop_list(HANDLE handle){
+	cls();
+	int pg = 1;
+	while(true){
+		cls();
+		logo(handle); scolor(handle,light_blue); cout << "哎呦的良心商店-童叟无欺" << endl; colorclear(handle);
+		cout << "温馨提示:哎呦的商店绝对"; scolor(handle,light_purple); cout << "非常非常良心且便宜"; colorclear(handle); cout << ",不骗人\nps:你购买的商品只有在标注的适用关卡中才能使用!" << endl;
+		scolor(handle,yellow); cout << "剩余金币:" << coin << endl << endl;
+		if(pg == 1){
+			if(!shop[0]) scolor(handle,gray);
+			else scolor(handle,sky);
+			cout << "商品1:[能量弹枪]" << endl;
+			colorclear(handle);
+			cout << "能力值:"; scolor(handle,red); cout << "C" << endl; colorclear(handle);
+			cout << "描述:新手必备远程武器,价格便宜,子弹还能化为能量体穿墙攻击,买到就是赚到!\n使用方法:按下Ctrl+想要发射子弹的方向(如Ctrl+W,Ctrl+D)即可直接击中对应方向的敌人\n射程:"; scolor(handle,red); cout << "很近(2格)" << endl;colorclear(handle);
+			cout << "价格:"; scolor(handle,light_green); cout << "60金币" << endl; colorclear(handle); cout << "适用关卡:1-5,1-7" << endl << endl;
+			if(!shop[1]) scolor(handle,gray);
+			else scolor(handle,sky);
+			cout << "商品2:[能量护盾]" << endl;
+			colorclear(handle);
+			cout << "能力值:"; scolor(handle,yellow); cout << "B" << endl; colorclear(handle);
+			cout << "描述:新手必备的防御器具,让你进可攻,退可守!" << endl;
+			cout << "价格:"; scolor(handle,light_green); cout << "60金币" << endl; colorclear(handle); cout << "适用关卡:暂无" << endl << endl;
+		}
+		pause();
+		if(KEY_DOWN('1')){
+			if(coin >= 60 && !shop[0]){
+				scolor(handle,light_green);
+				cout << "你成功买下了商品[能量弹枪]!" << endl;
+				coin -= 60;
+				shop[0] = 1;
+				Sleep(1000);
+			}
+			else if(coin >= 60 && shop[0]){
+				scolor(handle,red);
+				cout << "你已经购买过这件商品了" << endl;
+				Sleep(1000);
+			}
+			else{
+				scolor(handle,red);
+				cout << "金币不足,购买失败!" << endl;
+				Sleep(1000);
+			}
+		}
+		else if(KEY_DOWN('2')){
+			scolor(handle,red);
+			cout << "金币不足,购买失败!" << endl;
+			Sleep(1000);
+		}
+		else{
+			return ;
+		}
+	}
 }
 int main(){
-	srand(time(0));
 	HANDLE handle;
 	handle = GetStdHandle(S_O_H);
 	HWND hWnd;
 	hWnd = GetConsoleWindow();
 	memset(cs,0,sizeof(cs));
 	read(handle);
+	CONSOLE_CURSOR_INFO cursorInfo = {1,0};
+	SetConsoleCursorInfo(handle,&cursorInfo);
 	while(true){
+		srand(time(0));
 		cls();
 		logo(handle);
 		scolor(handle,gray);
 		cout << "请选择想要游玩的章节:" << endl;
-		if(cs[1] < 5){
+		if(cs[1] < 7){
 			scolor(handle,light_red);
 			cout << "第一章节:矩阵探秘(冒险中)" << endl;
 		} else{
 			scolor(handle,light_green);
 			cout << "第一章节:矩阵探秘(已通关)" << endl;
 		}
-		scolor(handle,gray); cout << "第二章节:敬请期待" << endl;
-		colorclear(handle); cout << "成就列表:按下数字9查看" << endl << endl;
-		scolor(handle,light_blue); cout << "想要查看游戏动态?按Ctrl+Z查看公告!" << endl;
+		scolor(handle,gray); cout << "第二章节:暂未解锁(" << cs[1] << "/9)" << endl;
+		colorclear(handle); cout << "成就列表:按下数字9查看" << endl;
+		scolor(handle,yellow); cout << "按字母S进入哎呦的良心商店!" << endl << endl;
+		scolor(handle,light_blue); cout << "想要查看游戏动态?按Ctrl+Z查看公告或按G进入官网!" << endl;
 		scolor(handle,light_yellow); cout << "冷知识:按下Ctrl+E即可进入控制台!" << endl;
-		scolor(handle,light_purple); cout << "按数字0对游戏进度进行存档" << endl << endl;
-		scolor(handle,light_yellow); cout << "当前版本:v0.5 ";
-		if(content == "1"){
-			scolor(handle,light_red); cout << "最新版本:v1.0+" << endl;
+		scolor(handle,light_purple); cout << "按数字0对游戏进度进行存档\n温馨提示:存档码输错了怎么办?进入控制台进行调整!" << endl << endl;
+		scolor(handle,light_yellow); cout << "当前版本:v1.0.0 ";
+		if(news == 1){
+			scolor(handle,light_red); cout << "最新版本:v1.1(请前往官网更新)" << endl;
 		}
 		cout << endl;
 		colorclear(handle);
 		pause();
 		if(KEY_DOWN('0')){
-			string str = out(coin,cs[1],ac,0);
+			string str = out(coin,cs[1],ac,shop);
 			output(str);
 			scolor(handle,red);
 			cout << "./file/userdata.txt修改已生效:" << str << endl;
@@ -1067,6 +1630,13 @@ int main(){
 		if(KEY_DOWN('1')){
 			cls();
 			ch_case1(handle);
+		}
+		if(KEY_DOWN(71)){
+			system("start https://aiyou945.github.io/ckg/down.html");
+		}
+		if(KEY_DOWN(83)){
+			cls();
+			shop_list(handle);
 		}
 	}
 	return 0;
